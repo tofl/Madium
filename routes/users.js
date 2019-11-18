@@ -1,6 +1,7 @@
 let express = require('express');
 let router = express.Router();
 const bcrypt = require('bcrypt');
+let auth = require('./../services/authentication');
 
 async function hashPassword(password) {
   const saltRounds = 10;
@@ -62,9 +63,46 @@ router.post('/new', async function(req, res, next) {
   }
   
   res.status(201);
-  // Create JWT
   res.send();
   
+});
+
+router.post('/login', async function(req, res, next) {
+  let info = {};
+  info.email = req.body.email;
+  info.password = req.body.password;
+
+  if (!info.email || !info.password) {
+    res.status(400);
+    res.send();
+    return;
+  }
+  
+  let userData = await res.locals.connection.query("SELECT id, email, password FROM users WHERE email = ?", [info.email]);
+  
+  if (userData[0].length === 0) {
+    res.status(404);
+    res.send();
+    return;
+  }
+  
+  const match = await bcrypt.compare(info.password, userData[0][0].password);
+  
+  if (!match) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  // Create JWT
+  let token = auth.createJwt(userData[0][0].id);
+  
+  res.status(200);
+  res.cookie('token', token, {
+    httpOnly: true,
+    expires: new Date(Date.now() + 3600000 * 24 * 14)
+  });
+  res.send();
 });
 
 module.exports = router;
