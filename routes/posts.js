@@ -43,6 +43,7 @@ router.post("/new", async (req, res, next) => {
   res.send({id: newPost[0].insertId});
 });
 
+// Get a specific post
 router.get("/:id", async (req, res, next) => {
   if (!req.params.id) {
     req.status(400);
@@ -64,6 +65,48 @@ router.get("/:id", async (req, res, next) => {
   
   res.status(200);
   res.send(post[0][0]);
+});
+
+// Delete a post
+router.delete("/:id", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  let userId = verified;
+  
+  // Check if the post exists
+  let post = await res.locals.connection.query("SELECT author_id FROM posts WHERE id = ?", [req.params.id]);
+  if (post[0].length === 0) {
+    res.status(404);
+    res.send();
+    return;
+  }
+  
+  // Check if the user is authorised
+  if (post[0][0].author_id !== userId) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  // Delete the post
+  let deletePost = await res.locals.connection.query("DELETE FROM posts WHERE id = ?", [req.params.id]);
+  if (deletePost[0].affectedRows === 0) {
+    res.status(500);
+    res.send();
+    return;
+  }
+  
+  // Delete all the related comments
+  let deleteComments = await res.locals.connection.query("DELETE FROM comments WHERE target_id = ?", [req.params.id]);
+  
+  res.status(200);
+  res.send();
 });
 
 module.exports = router;

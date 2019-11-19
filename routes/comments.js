@@ -74,4 +74,43 @@ router.get("/:id", async (req, res, next) => {
   res.send(comments[0]);
 });
 
+router.delete("/:id", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  let userId = verified;
+  
+  // Check if the user is authorised to delete the comment :
+  let commentAuthor = await res.locals.connection.query("SELECT author_id FROM comments WHERE id = ?", [req.params.id]);
+  
+  if (!commentAuthor[0][0]) {
+    res.status(404);
+    res.send();
+    return;
+  }
+  
+  if (commentAuthor[0][0].author_id !== userId) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  // Delete the comment :
+  let deleteComment = await res.locals.connection.query("DELETE FROM comments WHERE id = ?", [req.params.id]);
+  
+  if (deleteComment[0].affectedRows === 0) {
+    res.status(409);
+    res.send();
+    return;
+  }
+  
+  res.status(200);
+  res.send();
+});
+
 module.exports = router;
