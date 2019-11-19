@@ -2,6 +2,7 @@ let express = require('express');
 let path = require('path');
 let cookieParser = require('cookie-parser');
 let logger = require('morgan');
+let cors = require('cors');
 let mysql = require('mysql2/promise');
 
 let usersRouter = require('./routes/users');
@@ -15,6 +16,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(cors());
 app.use(async (req, res, next) => {
   res.locals.connection = await mysql.createConnection({
     host: "localhost",
