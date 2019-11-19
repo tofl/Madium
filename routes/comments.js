@@ -113,4 +113,61 @@ router.delete("/:id", async (req, res, next) => {
   res.send();
 });
 
+router.put("/:id", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  let userId = verified;
+  
+  // Retrieve the body of the request
+  let info = {};
+  info.content = req.body.content;
+  info.target = req.params.id;
+  
+  let errors = [];
+  if (!info.content || info.content.length === 0 || info.content.length > 300) {
+    errors.push("content");
+  }
+  if (!info.target) {
+    errors.push("target");
+  }
+  
+  if (errors.length > 0) {
+    res.status(400);
+    res.send(errors);
+    return;
+  }
+  
+  // Check if the user is authorised to update the comment :
+  let commentAuthor = await res.locals.connection.query("SELECT author_id FROM comments WHERE id = ?", [req.params.id]);
+  
+  if (!commentAuthor[0][0]) {
+    res.status(404);
+    res.send();
+    return;
+  }
+  
+  if (commentAuthor[0][0].author_id !== userId) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  // Update the comment :
+  let updateComment = await res.locals.connection.query("UPDATE comments SET content = ? WHERE id = ?", [info.content, req.params.id]);
+  if (updateComment[0].affectedRows === 0) {
+    res.status(500);
+    res.send();
+    return;
+  }
+  
+  res.status(200);
+  res.send();
+});
+
 module.exports = router;
