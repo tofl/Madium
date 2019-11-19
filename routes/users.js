@@ -26,16 +26,16 @@ router.post('/new', async function(req, res, next) {
   
   let errors = [];
   
-  if (info.firstname.length < 2 || info.firstname.length > 20) {
+  if (!info.firstname || info.firstname.length < 2 || info.firstname.length > 20) {
     errors.push("firstname");
   }
-  if (info.lastname.length < 2 || info.lastname.length > 25) {
+  if (!info.lastname || info.lastname.length < 2 || info.lastname.length > 25) {
     errors.push("lastname");
   }
-  if (info.email.length < 5 || info.email.length > 200) {
+  if (!info.email || info.email.length < 5 || info.email.length > 200) {
     errors.push("email");
   }
-  if (info.password.length < 5 || info.password.length > 255) {
+  if (!info.password || info.password.length < 5 || info.password.length > 255) {
     errors.push("password");
   }
   
@@ -228,6 +228,62 @@ router.get("/unfollow/:id", async (req, res, next) => {
     res.send();
     return;
   }
+  
+  res.status(200);
+  res.send();
+});
+
+router.put("/:id", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  let userId = verified;
+  
+  // Check if the targeted user is not the user making the request
+  if (userId != req.params.id) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  // Checking for errors :
+  let info = {};
+  info.firstname = req.body.firstname;
+  info.lastname = req.body.lastname;
+  info.email = req.body.email;
+  info.password = req.body.password
+  
+  let errors = [];
+  
+  if (!info.firstname || info.firstname.length < 2 || info.firstname.length > 20) {
+    errors.push("firstname");
+  }
+  if (!info.lastname || info.lastname.length < 2 || info.lastname.length > 25) {
+    errors.push("lastname");
+  }
+  if (!info.email || info.email.length < 5 || info.email.length > 200) {
+    errors.push("email");
+  }
+  if (!info.password || info.password.length < 5 || info.password.length > 255) {
+    errors.push("password");
+  }
+  
+  if (errors.length > 0) {
+    res.status(400);
+    res.send(JSON.stringify(errors));
+  }
+  
+  let password = await hashPassword(info.password);
+  
+  await res.locals.connection.query(
+    "UPDATE users SET firstname = ?, lastname = ?, email = ?, password = ? WHERE id = ?",
+    [info.firstname, info.lastname, info.email, password, req.params.id]
+  );
   
   res.status(200);
   res.send();
