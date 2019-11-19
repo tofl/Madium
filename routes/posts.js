@@ -25,7 +25,6 @@ router.post("/new", async (req, res, next) => {
     errors.push("title");
   }
   if (info.content.length < 10) {
-    console.log(info.content.length);
     errors.push("content");
   }
   if (errors.length > 0) {
@@ -104,6 +103,63 @@ router.delete("/:id", async (req, res, next) => {
   
   // Delete all the related comments
   let deleteComments = await res.locals.connection.query("DELETE FROM comments WHERE target_id = ?", [req.params.id]);
+  
+  res.status(200);
+  res.send();
+});
+
+
+
+// Update post
+router.put("/:id", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  let userId = verified;
+  
+  // Verifying the post :
+  let info = {};
+  info.title = req.body.title;
+  info.content = req.body.content;
+  
+  let errors = [];
+  if (!info.title || info.title.length < 0 || info.title.length > 255) {
+    errors.push("title");
+  }
+  if (!info.content || info.content.length < 10) {
+    errors.push("content");
+  }
+  if (errors.length > 0) {
+    res.status(400);
+    res.send(errors);
+    return;
+  }
+  
+  // Check if the post exists
+  let post = await res.locals.connection.query("SELECT author_id FROM posts WHERE id = ?", [req.params.id]);
+  if (post[0].length === 0) {
+    res.status(404);
+    res.send();
+    return;
+  }
+  
+  // Check if the user is the author of the targeted post
+  if (userId !== post[0][0].author_id) {
+    res.status(403);
+    res.send();
+    return
+  }
+  
+  
+  await res.locals.connection.query(
+    "UPDATE posts SET title = ?, content = ? WHERE id = ?",
+    [info.title, info.content, userId]
+  );
   
   res.status(200);
   res.send();
