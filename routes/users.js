@@ -15,8 +15,7 @@ async function hashPassword(password) {
   return hash;
 }
 
-
-/* GET users listing. */
+// New user
 router.post('/new', async function(req, res, next) {
   let info = {};
   info.firstname = req.body.firstname;
@@ -304,6 +303,27 @@ router.put("/:id", async (req, res, next) => {
   
   res.status(200);
   res.send();
+});
+
+
+// Get a user
+router.get("/:id?", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  let userId = verified ? verified : (req.params.id ? req.params.id : null);
+  
+  if (!userId) {
+    res.status(400);
+    res.send();
+    return;
+  }
+  
+  // Retrieve the user info
+  let user = await res.locals.connection.query("SELECT * FROM users WHERE id = ?", [userId]);
+  delete user[0][0].password;
+  
+  res.status(200);
+  res.send(user[0][0]);
 });
 
 module.exports = router;
