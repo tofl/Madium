@@ -169,9 +169,50 @@ router.put("/:id", async (req, res, next) => {
 router.get("/page/:page", async (req, res, next) => {
   let page = req.params.page - 1;
   let from = 10 * page;
-  let to = 10 * page + 10;
   
-  let posts = await res.locals.connection.query("SELECT * FROM posts LIMIT ?, ?", [from, to]);
+  let posts = await res.locals.connection.query("SELECT * FROM posts LIMIT ?, 10", [from]);
+  
+  res.status(200);
+  res.send(posts[0]);
+});
+
+
+// Get posts from followers
+router.get("/follow/:page", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  let userId = verified;
+  
+  // Find all the users this user follows
+  let followingResults = await res.locals.connection.query("SELECT * FROM followers WHERE follower = ?", [userId]);
+  
+  let following = [];
+  followingResults[0].forEach(el => {
+    following.push(el.followed);
+  });
+  
+  // Find all the post from the followed users :
+  let list = "(";
+  following.forEach((el, i) => {
+    list += el;
+    if (i !== following.length - 1) {
+      list += ', ';
+    }
+  });
+  list += ")";
+  
+  let from = (req.params.page - 1) * 10;
+  
+  let posts = await res.locals.connection.query(
+    "SELECT * FROM posts WHERE author_id IN " + list + " LIMIT ?, 10",
+    [from]
+  );
   
   res.status(200);
   res.send(posts[0]);
