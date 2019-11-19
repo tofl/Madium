@@ -165,4 +165,15 @@ router.put("/:id", async (req, res, next) => {
   res.send();
 });
 
+// Get all posts (with pagination)
+router.get("/page/:page", async (req, res, next) => {
+  let page = req.params.page - 1;
+  let from = 10 * page;
+  let to = 10 * page + 10;
+  
+  let posts = await res.locals.connection.query("SELECT * FROM posts LIMIT ?, ?", [from, to]);
+  
+  res.send(posts);
+});
+
 module.exports = router;
