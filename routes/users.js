@@ -106,6 +106,23 @@ router.post('/login', async function(req, res, next) {
   res.send();
 });
 
+
+// User logout
+router.get("/logout", async (req, res, next) => {
+  let verified = auth.verifyJwt(req.cookies.token);
+  
+  if (!verified) {
+    res.status(403);
+    res.send();
+    return;
+  }
+  
+  // Delete cookie
+  res.cookie('token', '', { expires: new Date(Date.now()) });
+  res.status(200);
+  res.send();
+});
+
 // Delete a user
 router.delete("/:id", async (req, res, next) => {
   let verified = auth.verifyJwt(req.cookies.token);
