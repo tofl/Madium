@@ -173,7 +173,8 @@ router.get("/page/:page", async (req, res, next) => {
   
   let posts = await res.locals.connection.query("SELECT * FROM posts LIMIT ?, ?", [from, to]);
   
-  res.send(posts);
+  res.status(200);
+  res.send(posts[0]);
 });
 
 module.exports = router;
