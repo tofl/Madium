@@ -1,11 +1,9 @@
 let express = require('express');
 let router = express.Router();
-const bcrypt = require('bcrypt');
 let auth = require('./../services/authentication');
 
 // Write a new post
 router.post("/new", async (req, res, next) => {
-  //console.log(req.cookies.token);
   let verified = auth.verifyJwt(req.cookies.token);
   
   if (!verified) {

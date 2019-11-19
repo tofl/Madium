@@ -6,6 +6,7 @@ let mysql = require('mysql2/promise');
 
 let usersRouter = require('./routes/users');
 let postsRouter = require('./routes/posts');
+let commentsRouter = require('./routes/comments');
 
 let app = express();
 
@@ -27,6 +28,7 @@ app.use(async (req, res, next) => {
 
 app.use('/users', usersRouter);
 app.use('/posts', postsRouter);
+app.use('/comments', commentsRouter);
 
 // catch 404 and forward to error handler
 // TODO : 404
