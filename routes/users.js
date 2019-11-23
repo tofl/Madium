@@ -309,7 +309,6 @@ router.put("/:id", async (req, res, next) => {
 // Get a user
 router.get("/:id?", async (req, res, next) => {
   let verified = auth.verifyJwt(req.cookies.token);
-  console.log(verified);
   
   let userId = verified ? verified : (req.params.id ? req.params.id : null);
   
