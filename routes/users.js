@@ -62,7 +62,7 @@ router.post('/new', async function(req, res, next) {
   }
   
   res.status(201);
-  res.send({userId: newUser[0].insertId});
+  res.send();
 });
 
 // User login endpoint
