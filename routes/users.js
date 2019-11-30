@@ -310,7 +310,6 @@ router.get("/:id?", async (req, res, next) => {
   let verified = auth.verifyJwt(req.cookies.token);
   
   let userId = req.params.id ? req.params.id : (verified ? verified : null);
-  console.log(userId);
   
   if (!userId) {
     res.status(400);
@@ -324,6 +323,29 @@ router.get("/:id?", async (req, res, next) => {
   
   res.status(200);
   res.send(user[0][0]);
+});
+
+// Check if a user is subscribed to another
+router.post("/subscribed/", async (req, res, next) => {
+  if (req.body.from === undefined || req.body.from.length === 0 || req.body.to === undefined || req.body.to.length === 0) {
+    res.status(400);
+    res.send();
+    return;
+  }
+  
+  let subscribed = await res.locals.connection.query(
+    "SELECT COUNT(*) AS count FROM followers WHERE follower = ? AND followed = ?",
+    [req.body.from, req.body.to]
+  );
+  
+  subscribed = subscribed[0][0].count;
+  if (subscribed === 1) {
+    res.status(200);
+    res.send(true);
+    return
+  }
+  res.status(200);
+  res.send(false);
 });
 
 module.exports = router;
